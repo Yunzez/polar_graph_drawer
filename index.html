@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Polar Plot Example</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+  <!-- Plotly.js -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+  <!-- Math.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.0.2/math.min.js"></script>
+
+</head>
+
+<body class="container mt-5">
+  <div class="m-3">
+    <p>
+      <a class="btn btn-warning" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false"
+        aria-controls="collapseExample">
+        About this page
+      </a>
+    </p>
+    <div class="collapse" id="collapseExample">
+      <div class="card card-body">
+        <div class="footer">
+          <p>
+            This website is intended for academic purposes only. The polar plot visualization was created by OpenAI's
+            ChatGPT
+            and Yunze Zhao. We kindly request that you use this tool responsibly and only for educational purposes.
+          </p>
+          <p>
+            The visualization relies on the following libraries:
+          <ul>
+            <li>mathjs: <a href="https://mathjs.org/" target="_blank" rel="noopener noreferrer">https://mathjs.org/</a>
+            </li>
+            <li>plotly.js: <a href="https://plotly.com/javascript/" target="_blank"
+                rel="noopener noreferrer">https://plotly.com/javascript/</a></li>
+          </ul>
+          </p>
+          <p>
+            If you have any questions, suggestions, or feedback, please feel free to contact Yunze Zhao at <a
+              href="mailto:yz8751@nyu.edu">yz8751@nyu.edu</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="text-center">
+    <h3 style="display: flex; justify-content: center;">
+      Put in Numerator/ Denominator (Format: 1 1 1 ...)
+    </h3>
+    <div style="display: flex; justify-content: center;">
+      <input style="padding: 10px" id="numerator" type="text" style="margin-left: 30px;"></input>
+    </div>
+    <hr />
+    <div style="display: flex; justify-content: center;">
+      <input style="padding: 10px" id="denominator" type="text" style="margin-left: 30px;"></input>
+    </div>
+    <div class="mt-4">
+      <button class="btn btn-lg btn-primary" id="generateBtn" style="padding: 10px; " onclick="updatePlot()">Generate
+        Plot</button>
+    </div>
+  </div>
+  <div id="error" class="d-none alert alert-danger m-3" role="alert">There are some errors in your input, make sure you
+    put in both value with correct format and no zero at the first digit of both numerator and denominator</div>
+  <div id="polar-plot"></div>
+
+</body>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+<script>
+  let max = 0
+  let numerator;
+  let denominator;
+
+  function evaluatePolynomial(coefficients, s) {
+    return coefficients.reduce((acc, coeff, i) => {
+      return math.add(acc, math.multiply(coeff, math.pow(s, i)));
+    }, 0);
+  }
+
+  function transferFunction(s) {
+    return math.divide(evaluatePolynomial(numerator, s), evaluatePolynomial(denominator, s));
+  }
+  function frequencyResponse(omega) {
+    return transferFunction(math.complex(0, omega));
+  }
+
+  function createPolarPlotData() {
+    const frequencyRange = Array.from({ length: 1000 }, (_, i) => 0.01 * Math.pow(100 / 0.01, i / 999));
+    const magnitudes = [];
+    const phases = [];
+
+    for (const omega of frequencyRange) {
+      const response = frequencyResponse(omega);
+      magnitudes.push(math.abs(response));
+      phases.push(math.arg(response));
+    }
+
+    return {
+      r: magnitudes,
+      theta: phases.map(phase => phase * 180 / Math.PI),
+      mode: 'lines',
+      type: 'scatterpolar',
+    };
+  }
+
+  function createPolarPlotLayout() {
+    max = 0
+    numerator.find(x => {
+      if (Math.abs(x) > max) {
+        max = Math.abs(x)
+      }
+    })
+    denominator.find(x => {
+      if (Math.abs(x) > max) {
+        max = Math.abs(x)
+      }
+    })
+
+    return {
+      title: 'Bode Polar Plot for G(s) = (s - 1) / (s + 1)',
+      polar: {
+        radialaxis: { title: 'Magnitude', range: [0, max + 1] },
+        angularaxis: { direction: 'clockwise', period: 360, tickmode: 'linear', dtick: 45, rotation: 360 },
+      },
+      showlegend: false,
+    };
+  }
+
+  function updatePlot() {
+    error.classList.add('d-none')
+    const numeratorInput = document.getElementById('numerator').value.split(' ').map(Number);
+    const denominatorInput = document.getElementById('denominator').value.split(' ').map(Number);
+    const deno = document.getElementById('denominator').value.split(' ')
+    const nume = document.getElementById('numerator').value.split(' ')
+
+    if (!document.getElementById('numerator').value || !document.getElementById('denominator').value) {
+      error.classList.remove('d-none')
+      return;
+    }
+
+    if (numeratorInput.some(isNaN) || denominatorInput.some(isNaN)) {
+      alert('Please enter valid comma-separated coefficients for numerator and denominator.');
+      return;
+    }
+
+    if (deno[0] == 0 || nume[0] == 0) {
+      error.classList.remove('d-none')
+      return;
+    }
+
+    numerator = numeratorInput;
+    denominator = denominatorInput;
+
+    Plotly.newPlot('polar-plot', [createPolarPlotData()], createPolarPlotLayout());
+  }
+
+
+</script>
+
+</html>
