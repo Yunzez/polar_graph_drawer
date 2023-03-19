@@ -12,11 +12,22 @@
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
   <!-- Math.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.0.2/math.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.7.0/math.js" integrity="sha512-jVMFsAksn8aljb9IJ+3OCAq38dJpquMBjgEuz7Q5Oqu5xenfin/jxdbKw4P5eKjUF4xiG/GPT5CvCX3Io54gyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/nerdamer.core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/algebra.js/0.2.3/algebra.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.12/Solve.min.js"></script>
 
 </head>
 
 <body class="container mt-5">
+  <nav>
+    <div class="nav nav-tabs" id="nav-tab" role="tablist">
+      <button class="nav-link active" id="nav-polar-tab" data-bs-toggle="tab" data-bs-target="#nav-polar" type="button"
+        role="tab" aria-controls="nav-polar" aria-selected="true">Polar Plot</button>
+      <button class="nav-link" id="nav-root-locus-tab" data-bs-toggle="tab" data-bs-target="#nav-root-locus" type="button"
+        role="tab" aria-controls="nav-root-locus" aria-selected="false">Root Locus Plot</button>
+    </div>
+  </nav>
   <div class="m-3">
     <p>
       <a class="btn btn-warning" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false"
@@ -49,26 +60,51 @@
       </div>
     </div>
   </div>
-  <div class="text-center">
-    <h6> polar graph drawer</h6>
-    <h6 style="display: flex; justify-content: center;">
-      Put in Numerator/ Denominator (Format: 1 1 1 ...)
-    </h6>
-    <div style="display: flex; justify-content: center;">
-      <input style="padding: 10px" id="numerator" type="text" style="margin-left: 30px;"></input>
+  <div class="tab-pane fade" id="nav-root-locus" role="tabpanel" aria-labelledby="nav-root-locus-tab">
+    <div class="text-center">
+      <h6>Root Locus Plot Generator</h6>
+      <h6 style="display: flex; justify-content: center;">
+        Put in Numerator/ Denominator (Format: 1 1 1 ...)
+      </h6>
+      <div style="display: flex; justify-content: center;">
+        <input style="padding: 10px" id="rl-numerator" type="text" style="margin-left: 30px;"></input>
+      </div>
+      <hr />
+      <div style="display: flex; justify-content: center;">
+        <input style="padding: 10px" id="rl-denominator" type="text" style="margin-left: 30px;"></input>
+      </div>
+      <div class="mt-4">
+        <button class="btn btn-lg btn-primary" id="rl-generateBtn" style="padding: 10px; " onclick="updateRLPlot()">Generate
+          Plot</button>
+      </div>
     </div>
-    <hr />
-    <div style="display: flex; justify-content: center;">
-      <input style="padding: 10px" id="denominator" type="text" style="margin-left: 30px;"></input>
-    </div>
-    <div class="mt-4">
-      <button class="btn btn-lg btn-primary" id="generateBtn" style="padding: 10px; " onclick="updatePlot()">Generate
-        Plot</button>
-    </div>
+    <div id="rl-error" class="d-none alert alert-danger m-3" role="alert">There are some errors in your input, make sure you
+      put in both value with correct format and no zero at the first digit of both numerator and denominator</div>
+    <div id="root-locus-plot"></div>
   </div>
-  <div id="error" class="d-none alert alert-danger m-3" role="alert">There are some errors in your input, make sure you
-    put in both value with correct format and no zero at the first digit of both numerator and denominator</div>
-  <div id="polar-plot"></div>
+  <div class="tab-pane fade show active" id="nav-polar" role="tabpanel" aria-labelledby="nav-polar-tab">
+    <div class="text-center">
+      <h6> polar graph drawer</h6>
+      <h6 style="display: flex; justify-content: center;">
+        Put in Numerator/ Denominator (Format: 1 1 1 ...)
+      </h6>
+      <div style="display: flex; justify-content: center;">
+        <input style="padding: 10px" id="numerator" type="text" style="margin-left: 30px;"></input>
+      </div>
+      <hr />
+      <div style="display: flex; justify-content: center;">
+        <input style="padding: 10px" id="denominator" type="text" style="margin-left: 30px;"></input>
+      </div>
+      <div class="mt-4">
+        <button class="btn btn-lg btn-primary" id="generateBtn" style="padding: 10px; " onclick="updatePlot()">Generate
+          Plot</button>
+      </div>
+    </div>
+    <div id="error" class="d-none alert alert-danger m-3" role="alert">There are some errors in your input, make sure you
+      put in both value with correct format and no zero at the first digit of both numerator and denominator</div>
+    <div id="polar-plot"></div>
+  </div>
+  
 
 </body>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
@@ -133,12 +169,14 @@
   }
 
   function updatePlot() {
+    console.log('update graph')
     error.classList.add('d-none')
     const numeratorInput = document.getElementById('numerator').value.split(' ').map(Number);
     const denominatorInput = document.getElementById('denominator').value.split(' ').map(Number);
     const deno = document.getElementById('denominator').value.split(' ')
     const nume = document.getElementById('numerator').value.split(' ')
-
+    console.log(deno)
+    console.log(nume)
     if (!document.getElementById('numerator').value || !document.getElementById('denominator').value) {
       error.classList.remove('d-none')
       return;
@@ -159,6 +197,129 @@
 
     Plotly.newPlot('polar-plot', [createPolarPlotData()], createPolarPlotLayout());
   }
+
+  // root locus graph
+  function findRoots(coefficients) {
+
+    // const coefficientsArray = coefficients.toArray();
+    coefficients = coefficients.reverse()
+    console.log(...coefficients)
+  const roots = math.polynomialRoot(...coefficients);
+  return roots.map(r => math.complex(r));
+}
+
+
+function createRLPlotData(numerator, denominator) {
+  const closedLoopDenominator = denominator.concat(numerator);
+  const openLoopPoles = findRoots(denominator);
+  const openLoopZeros = findRoots(numerator);
+  const closedLoopPoles = findRoots(closedLoopDenominator);
+
+  const openLoopPolesTrace = {
+    x: openLoopPoles.map(p => p.re),
+    y: openLoopPoles.map(p => p.im),
+    mode: 'markers',
+    type: 'scatter',
+    name: 'Open-loop Poles',
+    marker: { size: 10, color: 'blue' }
+  };
+
+  const openLoopZerosTrace = {
+    x: openLoopZeros.map(p => p.re),
+    y: openLoopZeros.map(p => p.im),
+    mode: 'markers',
+    type: 'scatter',
+    name: 'Open-loop Zeros',
+    marker: { size: 10, color: 'red' }
+  };
+
+  const closedLoopPolesTrace = {
+    x: closedLoopPoles.map(p => p.re),
+    y: closedLoopPoles.map(p => p.im),
+    mode: 'markers',
+    type: 'scatter',
+    name: 'Closed-loop Poles',
+    marker: { size: 10, color: 'green' }
+  };
+  const linesTrace = createLinesTrace(openLoopPoles, openLoopZeros);
+
+  return [openLoopPolesTrace, openLoopZerosTrace, closedLoopPolesTrace, linesTrace];
+
+}
+
+function createRLPlotLayout() {
+  return {
+    xaxis: {
+      title: 'Real',
+      zeroline: true
+    },
+    yaxis: {
+      title: 'Imaginary',
+      zeroline: true
+    },
+    showlegend: true
+  };
+}
+
+function updateRLPlot() {
+  const rlError = document.getElementById('rl-error');
+  rlError.classList.add('d-none');
+
+  const numeratorInput = document.getElementById('rl-numerator').value.split(' ').map(Number);
+  const denominatorInput = document.getElementById('rl-denominator').value.split(' ').map(Number);
+
+  if (!document.getElementById('rl-numerator').value || !document.getElementById('rl-denominator').value) {
+    rlError.classList.remove('d-none');
+    return;
+  }
+
+  if (numeratorInput.some(isNaN) || denominatorInput.some(isNaN)) {
+    alert('Please enter valid comma-separated coefficients for numerator and denominator.');
+    return;
+  }
+
+  if (numeratorInput[0] === 0 || denominatorInput[0] === 0) {
+    rlError.classList.remove('d-none');
+    return;
+  }
+
+  const plotData = createRLPlotData(numeratorInput, denominatorInput);
+  const plotLayout = createRLPlotLayout();
+  Plotly.newPlot('root-locus-plot', plotData, plotLayout);
+}
+
+function calculateLineSegments(poles, zeros) {
+  const segments = [];
+
+  for (const pole of poles) {
+    for (const zero of zeros) {
+      segments.push([pole.re, pole.im, zero.re, zero.im]);
+    }
+  }
+
+  return segments;
+}
+
+function createLinesTrace(poles, zeros) {
+  const segments = calculateLineSegments(poles, zeros);
+
+  const trace = {
+    x: [],
+    y: [],
+    mode: 'lines',
+    type: 'scatter',
+    name: 'Root Locus Lines',
+    line: { color: 'purple', width: 1 },
+  };
+
+  segments.forEach(segment => {
+    trace.x.push(segment[0], segment[2], null);
+    trace.y.push(segment[1], segment[3], null);
+  });
+
+  return trace;
+}
+
 
 
 </script>
